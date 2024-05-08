@@ -16,16 +16,11 @@ const emit = defineEmits<IFsTreeEmitter>()
 
 const treeData = ref<ITreeNode[]>([])
 
-
-
 const checkedSet = ref(new Set(props.defaultCheckedKeys))
 
 watch(
   () => props.data,
-  newValue => {
-    console.log('newValue = ', newValue)
-    treeData.value = formatTreeData(newValue, null)
-  },
+  newValue => (treeData.value = formatTreeData(newValue, null)),
   {
     immediate: true
   }
@@ -79,6 +74,7 @@ function handleToggleExpanded(node: ITreeNode) {
 }
 
 function handleCheckNode(node: ITreeNode) {
+  node.isHalfChecked = false
   node.isChecked = !node.isChecked
   checkedSet.value[node.isChecked ? 'add' : 'delete'](node.key)
   handleCheckChildren(node, node.isChecked)
@@ -141,18 +137,50 @@ function handleCheckParent(node: ITreeNode, isCheck: boolean) {
     parentKey = parent.parentKey
   }
 }
+
+function getCheckedKeys() {
+  return [...checkedSet.value]
+}
+
+function getCheckedNotes() {
+  const res: ITreeNode[] = []
+  for (const key of checkedSet.value) {
+    res.push(toRaw(treeMap.value.get(key)!))
+  }
+  return res
+}
+
+function expandAll() {
+  treeMap.value.keys()
+  for (const key of treeMap.value.keys()) {
+    const node = treeMap.value.get(key)
+    if (node!.children.length && !expandedSet.value.has(node!.key)) {
+      expandedSet.value.add(node!.key)
+    }
+  }
+}
+
+function collapseAll() {
+  for (const node of flattenTree.value) {
+    if (node.children.length && expandedSet.value.has(node.key)) {
+      expandedSet.value.delete(node.key)
+    }
+  }
+}
+
+defineExpose({ getCheckedKeys, getCheckedNotes, expandAll, collapseAll })
 </script>
 
 <template>
-    <fs-tree-node
-      v-for="i in flattenTree"
-      :key="i.key"
-      :node="i"
-      :is-expanded="computedIsExpanded(i)"
-      :show-checkbox="props.showCheckbox"
-      @toggle-expanded="handleToggleExpanded"
-      @on-check="handleCheckNode"
-    />
+  <fs-tree-node
+    v-for="i in flattenTree"
+    :key="i.key"
+    :node="i"
+    :is-expanded="computedIsExpanded(i)"
+    :show-checkbox="props.showCheckbox"
+    @toggle-expanded="handleToggleExpanded"
+    @on-check="handleCheckNode"
+  />
 </template>
 
 <style scoped></style>

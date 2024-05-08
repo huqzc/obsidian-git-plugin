@@ -1,5 +1,3 @@
-import type { PropType, ExtractPropTypes } from 'vue'
-
 export type NodeKey = string | number;
 
 export interface IFsTreeProps {

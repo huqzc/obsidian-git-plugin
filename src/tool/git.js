@@ -27,7 +27,6 @@ export const gitDir = getGitDirs().pop()
 
 async function listGitFiles() {
   const status = await git.statusMatrix({ fs, dir: gitDir })
-  console.log('status =', status)
   return groupGitFile(status)
 }
 
@@ -68,10 +67,10 @@ function groupGitFile(statusList) {
       }
 
       if (i === 0) {
-        parentNode = findOrCreateNode(source, p, item)
+        parentNode = findOrCreateNode(source, fullpath, item)
       } else {
         parentNode.children = parentNode.children || []
-        parentNode = findOrCreateNode(parentNode.children, p, item)
+        parentNode = findOrCreateNode(parentNode.children, fullpath, item)
       }
     }
   }

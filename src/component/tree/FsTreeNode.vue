@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { IFsTreeNodeEmitter, IFsTreeNodeProps, ITreeNode } from './types'
-import collapse from './asset/chevron-right.svg'
-import expand from './asset/chevron-down.svg'
+import collapse from '../asset/chevron-right.svg'
+import expand from '../asset/chevron-down.svg'
 import { ref, watch } from 'vue'
+import FsCheckbox from '../checkbox/FsCheckbox.vue'
 
 const props = defineProps<IFsTreeNodeProps>()
 const emit = defineEmits<IFsTreeNodeEmitter>()
@@ -21,7 +22,6 @@ watch(
   () => props.node.isHalfChecked,
   newValue => {
     if (input.value) {
-      console.log('input.value = ', input.value)
       input.value.indeterminate = true
     }
   },
@@ -34,7 +34,7 @@ watch(
 <template>
   <div
     class="fs-node-content"
-    :style="{ paddingLeft: `${(props.node.level + 1) * 16}px` }"
+    :style="{ paddingLeft: `${props.node.level * 16}px` }"
   >
     <span class="fs-node-icon">
       <img
@@ -44,15 +44,18 @@ watch(
         @click="handleToggleExpand(props.node)"
       />
     </span>
-    <input
-      v-if="props.showCheckbox"
-      type="checkbox"
-      ref="input"
+    <fs-checkbox
       :checked="props.node.isChecked"
       :indeterminate="props.node.isHalfChecked"
       @change="handleCheckChange(props.node)"
     />
-    <span>{{ props.node.name }}({{ props.node.level }})</span>
+    <span
+      class="fs-node-label"
+      :style="{ fontWeight: props.node.level === 0 ? 'bold' : 'unset' }"
+    >
+      {{ props.node.name }}
+    </span>
+    <span class="fs-node-label-extra"> {{ props.node.level }}</span>
   </div>
 </template>
 
@@ -61,7 +64,7 @@ watch(
   padding: 5px;
   cursor: pointer;
   display: flex;
-  align-items: flex-start;
+  align-items: center;
 }
 
 .fs-node-icon {
@@ -72,5 +75,11 @@ watch(
 .fs-node-icon > img {
   width: 16px;
   height: 16px;
+}
+
+.fs-node-label-extra {
+  color: rgba(0, 0, 0, 0.3);
+  font-size: 13px;
+  margin-left: 10px;
 }
 </style>

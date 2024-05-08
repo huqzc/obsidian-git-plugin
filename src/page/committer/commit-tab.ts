@@ -1,5 +1,4 @@
 import { ItemView, WorkspaceLeaf } from 'obsidian'
-import git from '../../tool/git.js'
 import { createApp } from 'vue'
 import CommitPage from './CommitPage.vue'
 
@@ -21,12 +20,19 @@ export class GitCommitter extends ItemView {
   async onOpen(): Promise<void> {
     const container = this.containerEl.children[1]
     container.empty()
-    const files = await git.listGitFiles()
-    console.log('files = ', files)
-    createApp(CommitPage, { gitFiles: files }).mount(container)
+    createApp(CommitPage).mount(container)
   }
 
   async onClose(): Promise<void> {
 
   }
+}
+
+export interface GitFile {
+  name: string;
+  path: string;
+  type: string;
+  status?: string;
+  children?: GitFile[];
+  [key: string]: any;
 }
