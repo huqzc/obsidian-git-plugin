@@ -5,36 +5,33 @@ import reloadIcon from '../asset/refresh-ccw.svg'
 import revertIcon from '../asset/undo-2.svg'
 import expandAllIcon from '../asset/chevrons-up-down.svg'
 import collapseAllIcon from '../asset/chevrons-down-up.svg'
-import git from '../../tool/git.js'
-import { GitFile } from './commit-tab'
+import * as git from '../../tool/git'
+import { FileGroup, GitFile } from '../../tool/git/types'
 
-const files = ref<{changed: GitFile[], untracked: GitFile[]}>(git.listGitFiles())
+const files = ref<FileGroup>()
+const CHANGES: GitFile = {
+  key: 'Changes',
+  name: 'Changes',
+  path: 'Changes',
+  type: 'dir',
+}
+const UNTRACKED: GitFile = {
+  key: 'Untracked',
+  name: 'Untracked',
+  path: 'Untracked',
+  type: 'dir',
+}
 
 const data: GitFile[] = computed(() => {
-  const { changed, untracked } = files.value
-  return [
-    {
-      key: 'Changes',
-      name: 'Changes',
-      path: 'Changes',
-      type: 'dir',
-      children: changed
-    },
-    {
-      key: 'Untracked',
-      name: 'Untracked',
-      path: 'Untracked',
-      type: 'dir',
-      children: untracked
-    }
-  ]
+  CHANGES.children = files.value?.changed || []
+  UNTRACKED.children = files.value?.untracked || []
+  return [CHANGES, UNTRACKED]
 })
 
 const tree = ref<InstanceType<typeof FsTree>>()
 
 async function reload() {
   files.value = await git.listGitFiles()
-  console.log('data = ', data)
 }
 
 function revert() {
@@ -50,6 +47,7 @@ function collapseAll() {
 }
 
 const textarea = ref<HTMLDivElement>()
+
 function toggleCommitPlaceholder(type: 'blur' | 'focus') {
   const commitMessage = textarea.value?.textContent?.trim()
   if (type === 'blur' && !commitMessage) {

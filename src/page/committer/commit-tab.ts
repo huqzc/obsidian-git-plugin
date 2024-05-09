@@ -27,12 +27,3 @@ export class GitCommitter extends ItemView {
 
   }
 }
-
-export interface GitFile {
-  name: string;
-  path: string;
-  type: string;
-  status?: string;
-  children?: GitFile[];
-  [key: string]: any;
-}
