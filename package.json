@@ -24,6 +24,6 @@
         "vue": "^3.4.27"
     },
     "dependencies": {
-        "isomorphic-git": "^1.25.8"
+        "simple-git": "^3.23.0"
     }
 }

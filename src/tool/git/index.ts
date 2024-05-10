@@ -1,5 +1,5 @@
-import { FileGroup, FileStates, GitFile, GitState } from './types'
-import git from 'isomorphic-git'
+import { FileGroup, GitFile, GitState } from './types'
+import { CleanOptions, simpleGit, SimpleGit } from 'simple-git'
 import * as fs from 'fs'
 import * as path from 'path'
 
@@ -17,61 +17,54 @@ function scanGitDirs(dir?: string): string[] {
 }
 
 const GIT_PATH_SEP: string = '/'
-export const gitDir: string = scanGitDirs().pop
+export const gitDir: string = scanGitDirs().pop()
+
+const git: SimpleGit = simpleGit(gitDir)
 
 export async function listGitFiles(): Promise<FileGroup> {
-  const status = await git.statusMatrix({
-    fs,
-    dir: gitDir
-  })
-  return groupGitFile(status)
-}
-
-function groupGitFile(statusList: FileStates[]): FileGroup {
+  const status = await git.status()
   const changed: GitFile[] = []
   const untracked: GitFile[] = []
-  for (const [filename, head, workdir, stage] of statusList) {
-    // 跳过未修改文件
-    if (head === 1 && workdir === 1) continue
-    // 获取文件 git 状态
-    let status: GitState = undefined
-    if (head === 0) {
-      status = stage === 0 ? 'untracked' : 'added'
-    }
-    if (head === 1) {
-      if (workdir === 0) status = 'deleted'
-      else if (workdir === 2) status = 'modified'
-    }
 
-    // 切换数据
-    let source = status === 'untracked' ? untracked : changed
+  classifyFile(changed, status.created, 'added')
+  classifyFile(changed, status.modified, 'modified')
+  classifyFile(changed, status.deleted, 'deleted')
+  classifyFile(untracked, status.not_added, 'untracked')
 
-    // 生成树结构
+  return { changed, untracked }
+}
+
+function classifyFile(sourceList: GitFile[], fileList: string[], status: GitState) {
+  for (const filename of fileList) {
     const pathArray = filename.split(GIT_PATH_SEP)
     let fullpath = ''
     let parentNode: GitFile | null = null
     for (let i = 0; i < pathArray.length; i++) {
       const p = pathArray[i]
-      fullpath += GIT_PATH_SEP + p
+      if (p === '') {
+        // TODO p 为空，说明以目录结束，需要手动遍历该目录获取子目录及文件
+        continue
+      }
+
+      fullpath += (i === 0 ? '' : GIT_PATH_SEP) + p
 
       const item: GitFile = {
         name: pathArray[i],
         path: fullpath,
         type: i !== pathArray.length - 1 ? 'dir' : 'file'
       }
-      if (i === pathArray.length - 1) {
+      if (item.type === 'file') {
         item.status = status
       }
 
       if (i === 0) {
-        parentNode = findOrCreateNode(source, fullpath, item)
+        parentNode = findOrCreateNode(sourceList, fullpath, item)
       } else {
         parentNode!.children = parentNode!.children || []
         parentNode = findOrCreateNode(parentNode!.children, fullpath, item)
       }
     }
   }
-  return { changed, untracked }
 }
 
 function findOrCreateNode(list: GitFile[], key: string, item: GitFile): GitFile {
@@ -82,7 +75,3 @@ function findOrCreateNode(list: GitFile[], key: string, item: GitFile): GitFile 
   }
   return node
 }
-
-git.commit({
-
-})
