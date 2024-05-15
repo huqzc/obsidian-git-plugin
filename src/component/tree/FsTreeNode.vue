@@ -55,7 +55,7 @@ watch(
     >
       {{ props.node.name }}
     </span>
-    <span class="fs-node-label-extra"> {{ props.node.level }}</span>
+    <span class="fs-node-label-extra" v-if="props.node.fileNum"> {{ props.node.fileNum }} files</span>
   </div>
 </template>
 

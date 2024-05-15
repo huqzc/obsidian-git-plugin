@@ -38,6 +38,7 @@ function formatTreeData(data: ITreeItem[], parent: ITreeNode | null): ITreeNode[
       isLeaf: item.isLeaf ?? children.length === 0,
       isChecked: item.isChecked ?? checkedSet.value.has(item[props.keyField]),
       isHalfChecked: item.isHalfChecked ?? false,
+      fileNum: item.fileNum,
       rawNode: item
     }
     if (children.length) {
@@ -168,7 +169,11 @@ function collapseAll() {
   }
 }
 
-defineExpose({ getCheckedKeys, getCheckedNotes, expandAll, collapseAll })
+function clearChecked() {
+  checkedSet.value.clear()
+}
+
+defineExpose({ getCheckedKeys, getCheckedNotes, expandAll, collapseAll, clearChecked })
 </script>
 
 <template>

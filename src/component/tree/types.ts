@@ -24,6 +24,7 @@ export interface ITreeItem {
   isLeaf?: boolean,
   isChecked: boolean,
   isHalfChecked: boolean,
+  fileNum: number,
   [key: string]: any;
 }
 
