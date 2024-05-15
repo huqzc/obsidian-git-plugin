@@ -7,31 +7,48 @@ import expandAllIcon from '../asset/chevrons-up-down.svg'
 import collapseAllIcon from '../asset/chevrons-down-up.svg'
 import * as git from '../../tool/git'
 import { FileGroup, GitFile } from '../../tool/git/types'
+import Message from '../../component/message/Message.vue'
+import {eventBus} from '../../tool/eventBus'
+
+const props = defineProps<{ baseDir: string }>()
 
 const files = ref<FileGroup>()
 const CHANGES: GitFile = {
   key: 'Changes',
   name: 'Changes',
   path: 'Changes',
-  type: 'dir',
+  type: 'dir'
 }
 const UNTRACKED: GitFile = {
   key: 'Untracked',
   name: 'Untracked',
   path: 'Untracked',
-  type: 'dir',
+  type: 'dir'
 }
 
-const data: GitFile[] = computed(() => {
+const changedData = computed<GitFile[]>(() => {
   CHANGES.children = files.value?.changed || []
-  UNTRACKED.children = files.value?.untracked || []
-  return [CHANGES, UNTRACKED]
+  CHANGES.fileNum = CHANGES.children.reduce((pre, cur) => (pre += cur.fileNum ?? 1), 0)
+  return [CHANGES]
 })
 
-const tree = ref<InstanceType<typeof FsTree>>()
+const untrackedData = computed<GitFile[]>(() => {
+  UNTRACKED.children = files.value?.untracked || []
+  UNTRACKED.fileNum = UNTRACKED.children.reduce((pre, cur) => (pre += cur.fileNum ?? 1), 0)
+  return [UNTRACKED]
+})
+
+const changedTree = ref<InstanceType<typeof FsTree>>()
+const untrackedTree = ref<InstanceType<typeof FsTree>>()
 
 async function reload() {
-  files.value = await git.listGitFiles()
+  git
+    .listGitFiles()
+    .then(v => (files.value = v))
+    .catch(err => {
+      console.error('err = ', err)
+      message.value?.message.error('git repo not exist')
+    })
 }
 
 function revert() {
@@ -39,31 +56,88 @@ function revert() {
 }
 
 function expandAll() {
-  tree.value?.expandAll()
+  changedTree.value?.expandAll()
+  untrackedTree.value?.expandAll()
 }
 
 function collapseAll() {
-  tree.value?.collapseAll()
+  changedTree.value?.collapseAll()
+  untrackedTree.value?.collapseAll()
 }
 
 const textarea = ref<HTMLDivElement>()
+const DEFAULT_MESSAGE = 'Commit Message'
+const DEFAULT_MESSAGE_HTML = '<span style="color: #ccc"> Commit Message </span>'
 
 function toggleCommitPlaceholder(type: 'blur' | 'focus') {
   const commitMessage = textarea.value?.textContent?.trim()
   if (type === 'blur' && !commitMessage) {
-    textarea.value!.textContent = 'Commit Message'
+    textarea.value!.innerHTML = DEFAULT_MESSAGE_HTML
   }
-  if (type === 'focus' && commitMessage === 'Commit Message') {
-    textarea.value!.textContent = ''
+  if (type === 'focus' && commitMessage === DEFAULT_MESSAGE) {
+    textarea.value!.innerHTML = ''
   }
 }
 
+async function commit() {
+  const commitMessage = textarea.value?.textContent?.trim()
+  if (!commitMessage || commitMessage === DEFAULT_MESSAGE) {
+    message.value?.message.warning('Lack commit message')
+    return
+  }
+  const changedFiles: string[] = changedTree
+    .value!.getCheckedNodes()
+    .filter(node => node.key !== 'Changes')
+    .map(node => node.rawNode.path)
+
+  const untrackedFiles = untrackedTree
+    .value!.getCheckedNodes()
+    .filter(node => node.key !== 'Untracked')
+    .map(node => node.rawNode.path)
+
+  const paths = [...changedFiles, ...untrackedFiles]
+
+  if (paths?.length === 0) {
+    message.value?.message.info('No files selected')
+    return
+  }
+  git
+    .add(paths)
+    .then(() => git.commit(paths, commitMessage))
+    .then(() => {
+      message.value?.message.success('commit success')
+      // 清除所有选择
+      changedTree.value!.clearChecked()
+      untrackedTree.value!.clearChecked()
+      reload()
+    })
+    .catch(err => {
+      console.error(err)
+      message.value?.message.error('commit failed')
+    })
+}
+
+async function commitAndPush() {
+  await commit()
+  git.push().catch(err => {
+    console.error(err)
+    message.value?.message.error('push failed')
+  })
+}
+
 onMounted(() => {
+  git.init(props.baseDir)
   reload()
+  eventBus.$on('modify', reload)
 })
+
+const message = ref<InstanceType<typeof Message>>()
+
+defineExpose({reload})
 </script>
 
 <template>
+  <message ref="message" />
   <div class="nav">
     <div
       class="nav-icon"
@@ -105,8 +179,15 @@ onMounted(() => {
 
   <div class="file-container">
     <fs-tree
-      ref="tree"
-      :data="data"
+      ref="changedTree"
+      :data="changedData"
+      show-checkbox
+      key-field="key"
+      label-field="name"
+    />
+    <fs-tree
+      ref="untrackedTree"
+      :data="untrackedData"
       show-checkbox
       key-field="key"
       label-field="name"
@@ -120,10 +201,10 @@ onMounted(() => {
       @blur="toggleCommitPlaceholder('blur')"
       @focus="toggleCommitPlaceholder('focus')"
     >
-      Commit Message
+      <span style="color: #ccc"> Commit Message </span>
     </div>
-    <button>Commit</button>
-    <button>Commit and Push</button>
+    <button @click="commit">Commit</button>
+    <button @click="commitAndPush">Commit and Push</button>
   </div>
 </template>
 
