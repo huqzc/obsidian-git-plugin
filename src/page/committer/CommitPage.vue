@@ -52,7 +52,21 @@ async function reload() {
 }
 
 function revert() {
-
+  const changedFiles: string[] = changedTree
+    .value!.getCheckedNodes()
+    .filter(node => node.key !== 'Changes')
+    .map(node => node.rawNode.path)
+  if (changedFiles.length === 0) return
+  // TODO confirm
+  const c = confirm('rollback changes?')
+  if (c) {
+    git.revert(changedFiles)
+      .then(() => clearChecked())
+      .catch(err => {
+        console.error(err)
+        message.value?.message.error('Reset file failed')
+      })
+  }
 }
 
 function expandAll() {
@@ -106,10 +120,7 @@ async function commit() {
     .then(() => git.commit(paths, commitMessage))
     .then(() => {
       message.value?.message.success('commit success')
-      // 清除所有选择
-      changedTree.value!.clearChecked()
-      untrackedTree.value!.clearChecked()
-      reload()
+      clearChecked()
     })
     .catch(err => {
       console.error(err)
@@ -132,6 +143,12 @@ onMounted(() => {
 })
 
 const message = ref<InstanceType<typeof Message>>()
+
+function clearChecked() {
+  changedTree.value!.clearChecked()
+  untrackedTree.value!.clearChecked()
+  reload()
+}
 
 defineExpose({reload})
 </script>

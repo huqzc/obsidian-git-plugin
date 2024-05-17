@@ -143,7 +143,7 @@ function getCheckedKeys() {
   return [...checkedSet.value]
 }
 
-function getCheckedNotes() {
+function getCheckedNodes() {
   const res: ITreeNode[] = []
   for (const key of checkedSet.value) {
     res.push(toRaw(treeMap.value.get(key)!))
@@ -173,7 +173,7 @@ function clearChecked() {
   checkedSet.value.clear()
 }
 
-defineExpose({ getCheckedKeys, getCheckedNotes, expandAll, collapseAll, clearChecked })
+defineExpose({ getCheckedKeys, getCheckedNodes, expandAll, collapseAll, clearChecked })
 </script>
 
 <template>

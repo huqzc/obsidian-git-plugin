@@ -134,6 +134,10 @@ export function push() {
   return git.push()
 }
 
+export function revert(files: string[]) {
+  return git.raw('checkout', '--', files.join(' '))
+}
+
 export function init(baseDir?: string) {
   gitDir = scanGitDirs(baseDir).pop() as string
   git = simpleGit(gitDir)
