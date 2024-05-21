@@ -5,6 +5,7 @@ import reloadIcon from '../asset/refresh-ccw.svg'
 import revertIcon from '../asset/undo-2.svg'
 import expandAllIcon from '../asset/chevrons-up-down.svg'
 import collapseAllIcon from '../asset/chevrons-down-up.svg'
+import gitPullIcon from '../asset/move-down-left.svg'
 import * as git from '../../tool/git'
 import { FileGroup, GitFile } from '../../tool/git/types'
 import Message from '../../component/message/Message.vue'
@@ -84,6 +85,15 @@ function expandAll() {
 function collapseAll() {
   changedTree.value?.collapseAll()
   untrackedTree.value?.collapseAll()
+}
+
+function gitPull() {
+  git.pull()
+    .then(() => message.value?.message.success('Pull success!'))
+    .catch(err => {
+    console.error(err)
+    message.value?.message.error('Git pull failed')
+  })
 }
 
 const textarea = ref<HTMLDivElement>()
@@ -206,6 +216,15 @@ const confirmVisible = ref<boolean>(false)
       <img
         :src="collapseAllIcon"
         alt="collapseAll"
+      />
+    </div>
+    <div
+      class="nav-icon"
+      @click="gitPull"
+    >
+      <img
+        :src="gitPullIcon"
+        alt="pull"
       />
     </div>
   </div>

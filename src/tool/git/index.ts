@@ -142,3 +142,7 @@ export function init(baseDir?: string) {
   gitDir = scanGitDirs(baseDir).pop() as string
   git = simpleGit(gitDir)
 }
+
+export function pull() {
+  return git.pull()
+}
