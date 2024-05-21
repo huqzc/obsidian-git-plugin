@@ -8,7 +8,8 @@ import collapseAllIcon from '../asset/chevrons-down-up.svg'
 import * as git from '../../tool/git'
 import { FileGroup, GitFile } from '../../tool/git/types'
 import Message from '../../component/message/Message.vue'
-import {eventBus} from '../../tool/eventBus'
+import { eventBus } from '../../tool/eventBus'
+import FsConfirm from '../../component/confirm/FsConfirm.vue'
 
 const props = defineProps<{ baseDir: string }>()
 
@@ -51,22 +52,28 @@ async function reload() {
     })
 }
 
+function confirmRevert() {
+  const changedFiles: string[] = changedTree
+    .value!.getCheckedNodes()
+    .filter(node => node.key !== 'Changes')
+    .map(node => node.rawNode.path)
+  if (changedFiles.length === 0) return
+  confirmVisible.value = true
+}
+
 function revert() {
   const changedFiles: string[] = changedTree
     .value!.getCheckedNodes()
     .filter(node => node.key !== 'Changes')
     .map(node => node.rawNode.path)
   if (changedFiles.length === 0) return
-  // TODO confirm
-  const c = confirm('rollback changes?')
-  if (c) {
-    git.revert(changedFiles)
-      .then(() => clearChecked())
-      .catch(err => {
-        console.error(err)
-        message.value?.message.error('Reset file failed')
-      })
-  }
+  git
+    .revert(changedFiles)
+    .then(() => clearChecked())
+    .catch(err => {
+      console.error(err)
+      message.value?.message.error('Reset file failed')
+    })
 }
 
 function expandAll() {
@@ -150,7 +157,9 @@ function clearChecked() {
   reload()
 }
 
-defineExpose({reload})
+defineExpose({ reload })
+
+const confirmVisible = ref<boolean>(false)
 </script>
 
 <template>
@@ -165,15 +174,22 @@ defineExpose({reload})
         alt="reload"
       />
     </div>
-    <div
-      class="nav-icon"
-      @click="revert"
+    <fs-confirm
+      :visible="confirmVisible"
+      title="Confirm rollback changes?"
+      :on-ok="revert"
+      :on-cancel="() => (confirmVisible = false)"
     >
-      <img
-        :src="revertIcon"
-        alt="revert"
-      />
-    </div>
+      <div
+        class="nav-icon"
+        @click="confirmRevert"
+      >
+        <img
+          :src="revertIcon"
+          alt="revert"
+        />
+      </div>
+    </fs-confirm>
     <div
       class="nav-icon"
       @click="expandAll"
