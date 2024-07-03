@@ -34,7 +34,7 @@ export class SampleSettingTab extends PluginSettingTab {
         dropdown.addOption('0', 'NO')
         dropdown.addOption('1', 'YES')
         dropdown.onChange(async value => {
-          this.plugin.settings.operationMeetGieRepo = value
+          this.plugin.settings.submitThirdGitRepo = value
           await this.plugin.saveSettings()
         })
       })

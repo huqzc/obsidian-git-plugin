@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import FsTree from '../../component/tree/FsTree.vue'
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, provide } from 'vue'
 import reloadIcon from '../asset/refresh-ccw.svg'
 import revertIcon from '../asset/undo-2.svg'
 import expandAllIcon from '../asset/chevrons-up-down.svg'
@@ -13,8 +13,10 @@ import { FileGroup, GitFile } from '../../tool/git/types'
 import Message from '../../component/message/Message.vue'
 import { eventBus } from '../../tool/eventBus'
 import FsConfirm from '../../component/confirm/FsConfirm.vue'
+import { PluginSettings } from '../../main'
 
-const props = defineProps<{ baseDir: string }>()
+const props = defineProps<{ baseDir: string; settings: PluginSettings }>()
+provide('settings', props.settings)
 
 const files = ref<FileGroup>()
 const CHANGES: GitFile = {
@@ -100,7 +102,8 @@ function gitPull() {
 }
 
 function gitPush() {
-  git.push()
+  git
+    .push()
     .then(() => message.value?.message.success('Push success'))
     .catch(err => {
       console.error(err)
@@ -194,7 +197,11 @@ function getGroupFileNum() {
 
   const nodes = changedTree.value?.getCheckedNodes()
   for (const node of nodes) {
-    checkedChangedFileNum.value += node.rawNode.type === 'file' ? 1 : 0
+    if (node.rawNode.status === 'deleted') {
+      deletedFileNum.value += 1
+    } else {
+      checkedChangedFileNum.value += node.rawNode.type === 'file' ? 1 : 0
+    }
   }
   const nodes1 = untrackedTree.value?.getCheckedNodes()
   for (const node of nodes1) {
@@ -291,12 +298,33 @@ function getGroupFileNum() {
   <div class="commit-box">
     <div class="commit-info">
       <div class="commit-history">
-        <div><img :src="historyIcon" alt="history" /></div>
+        <div>
+          <img
+            :src="historyIcon"
+            alt="history"
+          />
+        </div>
       </div>
       <div class="select-file">
-        <template v-if="checkedUntrackedFileNum"> {{ checkedUntrackedFileNum }} added </template>
-        <template v-if="checkedChangedFileNum"> {{ checkedChangedFileNum }} modified </template>
-        <template v-if="deletedFileNum"> {{ deletedFileNum }} deleted </template>
+        <span
+          v-if="checkedUntrackedFileNum"
+          :style="{ color: props.settings.addedFontColor }"
+        >
+          {{ checkedUntrackedFileNum }} added
+        </span>
+        <span
+          v-if="checkedChangedFileNum"
+          :style="{ color: settings.modifiedFontColor }"
+        >
+          {{ checkedChangedFileNum }}
+          modified
+        </span>
+        <span
+          v-if="deletedFileNum"
+          :style="{ color: settings.deletedFontColor }"
+        >
+          {{ deletedFileNum }} deleted
+        </span>
       </div>
     </div>
     <div

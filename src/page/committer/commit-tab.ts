@@ -2,12 +2,16 @@ import { ItemView, WorkspaceLeaf } from 'obsidian'
 import { createApp } from 'vue'
 import CommitPage from './CommitPage.vue'
 import { eventBus } from '../../tool/eventBus'
+import GitCommitterPlugin from '../../main'
 
 export const VIEW_TYPE_NAME = 'git-committer'
 
 export class GitCommitter extends ItemView {
-  constructor(leaf: WorkspaceLeaf) {
+  plugin: GitCommitterPlugin
+
+  constructor(leaf: WorkspaceLeaf, plugin: GitCommitterPlugin) {
     super(leaf)
+    this.plugin = plugin
     this.registerEvent(this.app.vault.on('modify', this.handleModify))
   }
 
@@ -23,7 +27,8 @@ export class GitCommitter extends ItemView {
     const container = this.containerEl.children[1]
     container.empty()
     const baseDir = this.app.vault.adapter.basePath as string
-    createApp(CommitPage, { baseDir }).mount(container)
+    const app = createApp(CommitPage, { baseDir, settings: this.plugin.settings })
+    app.mount(container)
   }
 
   async onClose(): Promise<void> {

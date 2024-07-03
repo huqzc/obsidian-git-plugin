@@ -2,23 +2,37 @@ import { Plugin, WorkspaceLeaf } from 'obsidian'
 import { SampleSettingTab } from './page/setting/setting-tab'
 import { GitCommitter, VIEW_TYPE_NAME } from './page/committer/commit-tab'
 
-interface PluginSettings {
+export interface PluginSettings {
   remoteRepoUrl: string
-  operationMeetGieRepo: string
+  submitThirdGitRepo: string
+
+  modifiedFontColor: string
+  addedFontColor: string
+  deletedFontColor: string
+  untrackedFontColor: string
+
+  commitHistory: string[]
 }
 
 const DEFAULT_SETTINGS: PluginSettings = {
   remoteRepoUrl: '',
-  operationMeetGieRepo: 'ignore'
+  submitThirdGitRepo: 'ignore',
+
+  modifiedFontColor: '#3F93F4',
+  addedFontColor: '#68AA72',
+  deletedFontColor: '#AFAFAF',
+  untrackedFontColor: '#DC362E',
+
+  commitHistory: []
 }
 
 export default class GitCommitterPlugin extends Plugin {
-  settings: PluginSettings
+  settings: PluginSettings = DEFAULT_SETTINGS
 
   async onload() {
     await this.loadSettings()
     this.addSettingTab(new SampleSettingTab(this.app, this))
-    this.registerView(VIEW_TYPE_NAME, leaf => new GitCommitter(leaf))
+    this.registerView(VIEW_TYPE_NAME, leaf => new GitCommitter(leaf, this))
 
     this.addRibbonIcon('git-commit-horizontal', 'git', () => {
       this.activateView()

@@ -4,7 +4,7 @@ import * as fs from 'fs'
 import * as path from 'path'
 
 const GIT_PATH_SEP: string = '/'
-let gitDir: string
+let vaultDir: string
 let git: SimpleGit
 
 function scanGitDirs(dir?: string): string[] {
@@ -31,7 +31,9 @@ export async function listGitFiles(): Promise<FileGroup> {
   classifyFile(untracked, status.not_added, 'untracked')
 
   changed.forEach(formatFiles)
+  changed.sort((a, b) => a.type.length - b.type.length)
   untracked.forEach(formatFiles)
+  untracked.sort((a, b) => a.type.length - b.type.length)
   return { changed, untracked }
 }
 
@@ -51,38 +53,41 @@ function formatFiles(item: GitFile) {
 
 function classifyFile(sourceList: GitFile[], fileList: string[], status: GitState) {
   for (const filename of fileList) {
-    const pathArray = filename.split(GIT_PATH_SEP)
-    let fullpath = ''
-    let parentNode: GitFile | null = null
-    if (pathArray[pathArray.length - 1] === '') {
+    const absFilePath = path.join(vaultDir, filename)
+    const fileType = status === 'deleted' ? 'file' : fs.statSync(absFilePath).isDirectory() ? 'dir' : 'file'
+    // TODO 出现一个目录的文件，可能是submodule。目前先做忽略处理，也就是不记录该目录
+    if (fileType === 'dir') {
+      console.log('ignore submodule:', absFilePath)
       continue
     }
-    for (let i = 0; i < pathArray.length; i++) {
-      const p = pathArray[i]
-      fullpath += (i === 0 ? '' : GIT_PATH_SEP) + p
 
-      if (p === '' && parentNode) {
-        // p 为空，说明以目录结束，需要手动遍历该目录获取子目录及文件
-        walkDirectory(parentNode.children, fullpath, status)
-        continue
-      }
+    const pathArray = filename.split(GIT_PATH_SEP)
+    let parentNode: GitFile
+    let relFilePath = ''
+    for (const [index, singlePath] of pathArray.entries()) {
+      relFilePath += (index === 0 ? '' : GIT_PATH_SEP) + singlePath
 
+      // 默认当作 dir 处理
       const item: GitFile = {
-        name: pathArray[i],
-        path: fullpath,
-        // type: i !== pathArray.length - 1 ? 'dir' : 'file'
-        type: fs.statSync(path.join(gitDir, fullpath)).isDirectory() ? 'dir' : 'file'
+        name: singlePath,
+        path: relFilePath,
+        type: 'dir',
+        children: [],
       }
-      if (item.type === 'file') {
+      // 最后一段补齐后改为 file
+      if (index === pathArray.length - 1) {
+        delete item.children
         item.status = status
+        item.type = 'file'
       }
 
-      if (i === 0) {
-        parentNode = findOrCreateNode(sourceList, fullpath, item)
+      if (index === 0) {
+        parentNode = findOrCreateNode(sourceList, relFilePath, item)
       } else {
         parentNode!.children = parentNode!.children || []
-        parentNode = findOrCreateNode(parentNode!.children, fullpath, item)
+        parentNode = findOrCreateNode(parentNode!.children, relFilePath, item)
       }
+
     }
   }
 }
@@ -139,8 +144,8 @@ export function revert(files: string[]) {
 }
 
 export function init(baseDir?: string) {
-  gitDir = scanGitDirs(baseDir).pop() as string
-  git = simpleGit(gitDir)
+  vaultDir = scanGitDirs(baseDir).pop() as string
+  git = simpleGit(vaultDir)
 }
 
 export function pull() {

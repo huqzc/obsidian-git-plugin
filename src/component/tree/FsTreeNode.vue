@@ -2,8 +2,9 @@
 import { IFsTreeNodeEmitter, IFsTreeNodeProps, ITreeNode } from './types'
 import collapse from '../asset/chevron-right.svg'
 import expand from '../asset/chevron-down.svg'
-import { ref, watch } from 'vue'
+import { ref, watch, inject } from 'vue'
 import FsCheckbox from '../checkbox/FsCheckbox.vue'
+import { PluginSettings } from '../../main'
 
 const props = defineProps<IFsTreeNodeProps>()
 const emit = defineEmits<IFsTreeNodeEmitter>()
@@ -29,6 +30,26 @@ watch(
     immediate: true
   }
 )
+
+const settings: PluginSettings = inject('settings')
+
+const computedFontColor = (status: string) => {
+  if (!settings) return 'inherit'
+  switch (status) {
+    case 'added':
+      return settings.addedFontColor
+    case 'modified':
+      return settings.modifiedFontColor
+    case 'deleted':
+      return settings.deletedFontColor
+    case 'untracked':
+      return settings.untrackedFontColor
+    default:
+      return 'inherit'
+  }
+}
+
+
 </script>
 
 <template>
@@ -51,11 +72,20 @@ watch(
     />
     <span
       class="fs-node-label"
-      :style="{ fontWeight: props.node.level === 0 ? 'bold' : 'unset' }"
+      :style="{
+        fontWeight: props.node.level === 0 ? 'bold' : 'unset',
+        color: computedFontColor(props.node.rawNode.status),
+        textDecoration: props.node.rawNode.status === 'deleted' ? 'line-through' : 'unset'
+      }"
     >
       {{ props.node.name }}
     </span>
-    <span class="fs-node-label-extra" v-if="props.node.fileNum"> {{ props.node.fileNum }} files</span>
+    <span
+      class="fs-node-label-extra"
+      v-if="props.node.fileNum"
+    >
+      {{ props.node.fileNum }} files</span
+    >
   </div>
 </template>
 
