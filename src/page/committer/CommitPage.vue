@@ -6,6 +6,8 @@ import revertIcon from '../asset/undo-2.svg'
 import expandAllIcon from '../asset/chevrons-up-down.svg'
 import collapseAllIcon from '../asset/chevrons-down-up.svg'
 import gitPullIcon from '../asset/move-down-left.svg'
+import gitPushIcon from '../asset/move-up-right.svg'
+import historyIcon from '../asset/clock.svg'
 import * as git from '../../tool/git'
 import { FileGroup, GitFile } from '../../tool/git/types'
 import Message from '../../component/message/Message.vue'
@@ -88,12 +90,22 @@ function collapseAll() {
 }
 
 function gitPull() {
-  git.pull()
+  git
+    .pull()
     .then(() => message.value?.message.success('Pull success!'))
     .catch(err => {
-    console.error(err)
-    message.value?.message.error('Git pull failed')
-  })
+      console.error(err)
+      message.value?.message.error('Git pull failed')
+    })
+}
+
+function gitPush() {
+  git.push()
+    .then(() => message.value?.message.success('Push success'))
+    .catch(err => {
+      console.error(err)
+      message.value?.message.error('Git push failed')
+    })
 }
 
 const textarea = ref<HTMLDivElement>()
@@ -170,6 +182,25 @@ function clearChecked() {
 defineExpose({ reload })
 
 const confirmVisible = ref<boolean>(false)
+
+const checkedUntrackedFileNum = ref<number>(0)
+const checkedChangedFileNum = ref<number>(0)
+const deletedFileNum = ref<number>(0)
+
+function getGroupFileNum() {
+  checkedUntrackedFileNum.value = 0
+  checkedChangedFileNum.value = 0
+  deletedFileNum.value = 0
+
+  const nodes = changedTree.value?.getCheckedNodes()
+  for (const node of nodes) {
+    checkedChangedFileNum.value += node.rawNode.type === 'file' ? 1 : 0
+  }
+  const nodes1 = untrackedTree.value?.getCheckedNodes()
+  for (const node of nodes1) {
+    checkedUntrackedFileNum.value += node.isLeaf ? 1 : 0
+  }
+}
 </script>
 
 <template>
@@ -220,6 +251,15 @@ const confirmVisible = ref<boolean>(false)
     </div>
     <div
       class="nav-icon"
+      @click="gitPush"
+    >
+      <img
+        :src="gitPushIcon"
+        alt="pull"
+      />
+    </div>
+    <div
+      class="nav-icon"
       @click="gitPull"
     >
       <img
@@ -236,6 +276,7 @@ const confirmVisible = ref<boolean>(false)
       show-checkbox
       key-field="key"
       label-field="name"
+      @on-check-change="getGroupFileNum"
     />
     <fs-tree
       ref="untrackedTree"
@@ -243,11 +284,23 @@ const confirmVisible = ref<boolean>(false)
       show-checkbox
       key-field="key"
       label-field="name"
+      @on-check-change="getGroupFileNum"
     />
   </div>
 
   <div class="commit-box">
+    <div class="commit-info">
+      <div class="commit-history">
+        <div><img :src="historyIcon" alt="history" /></div>
+      </div>
+      <div class="select-file">
+        <template v-if="checkedUntrackedFileNum"> {{ checkedUntrackedFileNum }} added </template>
+        <template v-if="checkedChangedFileNum"> {{ checkedChangedFileNum }} modified </template>
+        <template v-if="deletedFileNum"> {{ deletedFileNum }} deleted </template>
+      </div>
+    </div>
     <div
+      class="commit-textarea"
       ref="textarea"
       contenteditable="true"
       @blur="toggleCommitPlaceholder('blur')"
@@ -302,9 +355,18 @@ const confirmVisible = ref<boolean>(false)
   height: 30%;
 }
 
-.commit-box div {
+.commit-info div {
+  display: inline-block;
+}
+
+.select-file {
+  height: 20px;
+  float: right;
+}
+
+.commit-textarea {
   width: 100%;
-  height: calc(100% - 15px - 30px);
+  height: calc(100% - 15px - 30px - 20px);
   border-top: 1px solid #ccc;
 }
 
