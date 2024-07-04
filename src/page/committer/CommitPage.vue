@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import FsTree from '../../component/tree/FsTree.vue'
-import { computed, onMounted, ref, provide } from 'vue'
+import { computed, onMounted, provide, ref } from 'vue'
 import reloadIcon from '../asset/refresh-ccw.svg'
 import revertIcon from '../asset/undo-2.svg'
 import expandAllIcon from '../asset/chevrons-up-down.svg'
@@ -94,7 +94,13 @@ function collapseAll() {
 function gitPull() {
   git
     .pull()
-    .then(() => message.value?.message.success('Pull success!'))
+    .then(res => {
+      const info =
+        res.files.length === 0
+          ? 'Already up to date.'
+          : `Pull success! ${res.files.length} files updated.`
+      message.value?.message.success(info)
+    })
     .catch(err => {
       console.error(err)
       message.value?.message.error('Git pull failed')
@@ -125,6 +131,8 @@ function toggleCommitPlaceholder(type: 'blur' | 'focus') {
   }
 }
 
+const processing = ref<boolean>(false)
+
 async function commit() {
   const commitMessage = textarea.value?.textContent?.trim()
   if (!commitMessage || commitMessage === DEFAULT_MESSAGE) {
@@ -147,25 +155,22 @@ async function commit() {
     message.value?.message.info('No files selected')
     return
   }
-  git
-    .add(paths)
-    .then(() => git.commit(paths, commitMessage))
-    .then(() => {
-      message.value?.message.success('commit success')
-      clearChecked()
-    })
-    .catch(err => {
-      console.error(err)
-      message.value?.message.error('commit failed')
-    })
+  try {
+    await git.add(paths)
+    await git.commit(paths, commitMessage)
+    message.value?.message.success('Commit success')
+    clearChecked()
+  } catch (e) {
+    console.error(e)
+    message.value?.message.error('Commit failed')
+  }
 }
 
 async function commitAndPush() {
+  processing.value = true
   await commit()
-  git.push().catch(err => {
-    console.error(err)
-    message.value?.message.error('push failed')
-  })
+  gitPush()
+  processing.value = false
 }
 
 onMounted(() => {
@@ -336,8 +341,18 @@ function getGroupFileNum() {
     >
       <span style="color: #ccc"> Commit Message </span>
     </div>
-    <button @click="commit">Commit</button>
-    <button @click="commitAndPush">Commit and Push</button>
+    <button
+      @click="commit"
+      :disabled="processing"
+    >
+      Commit
+    </button>
+    <button
+      @click="commitAndPush"
+      :disabled="processing"
+    >
+      Commit and Push
+    </button>
   </div>
 </template>
 
