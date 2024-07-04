@@ -13,6 +13,9 @@ export class GitCommitter extends ItemView {
     super(leaf)
     this.plugin = plugin
     this.registerEvent(this.app.vault.on('modify', this.handleModify))
+    this.registerEvent(this.app.vault.on('create', this.handleModify))
+    this.registerEvent(this.app.vault.on('delete', this.handleModify))
+    this.registerEvent(this.app.vault.on('rename', this.handleModify))
   }
 
   getViewType(): string {
@@ -34,6 +37,9 @@ export class GitCommitter extends ItemView {
   async onClose(): Promise<void> {
     eventBus.$off('modify')
     this.app.vault.off('modify', this.handleModify)
+    this.app.vault.off('create', this.handleModify)
+    this.app.vault.off('delete', this.handleModify)
+    this.app.vault.off('rename', this.handleModify)
   }
 
   handleModify() {
