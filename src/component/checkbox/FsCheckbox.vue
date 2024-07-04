@@ -16,11 +16,10 @@ const toggleChecked = () => {
 </script>
 
 <template>
-  <span>
+  <span @click="toggleChecked">
     <img
       :src="src"
       alt=""
-      @click="toggleChecked"
     />
   </span>
 </template>
@@ -30,10 +29,14 @@ span {
   cursor: pointer;
   width: 20px;
   height: 20px;
+  overflow: hidden;
 }
 
 span img {
   width: 16px;
   height: 16px;
+
+  filter: drop-shadow(var(--icon-color) 0 50px);
+  transform: translateY(-50px);
 }
 </style>

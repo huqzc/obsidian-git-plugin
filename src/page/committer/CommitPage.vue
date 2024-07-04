@@ -298,7 +298,7 @@ function getGroupFileNum() {
   <div class="commit-box">
     <div class="commit-info">
       <div class="commit-history">
-        <div>
+        <div class="nav-icon">
           <img
             :src="historyIcon"
             alt="history"
@@ -308,13 +308,13 @@ function getGroupFileNum() {
       <div class="select-file">
         <span
           v-if="checkedUntrackedFileNum"
-          :style="{ color: props.settings.addedFontColor }"
+          :style="{ color: 'var(--color-green)' }"
         >
           {{ checkedUntrackedFileNum }} added
         </span>
         <span
           v-if="checkedChangedFileNum"
-          :style="{ color: settings.modifiedFontColor }"
+          :style="{ color: 'var(--color-blue)' }"
         >
           {{ checkedChangedFileNum }}
           modified
@@ -351,10 +351,11 @@ function getGroupFileNum() {
   width: 25px;
   height: 25px;
   position: relative;
+  overflow: hidden;
 }
 
 .nav-icon:hover {
-  background-color: #e4e4e4;
+  background-color: var(--background-modifier-hover);
   border-radius: 3px;
 }
 
@@ -367,6 +368,9 @@ function getGroupFileNum() {
   bottom: 0;
   left: 0;
   margin: auto;
+
+  filter: drop-shadow(var(--icon-color) 0 50px);
+  transform: translateY(-50px);
 }
 
 .nav-icon:first-child img {
@@ -394,7 +398,7 @@ function getGroupFileNum() {
 
 .commit-textarea {
   width: 100%;
-  height: calc(100% - 15px - 30px - 20px);
+  height: calc(100% - 30px - 30px - 16px);
   border-top: 1px solid #ccc;
 }
 

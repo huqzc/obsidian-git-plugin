@@ -72,10 +72,11 @@ watch(() => prop.visible, listenClick, { immediate: true })
   position: absolute;
   top: 5px;
   left: 25px;
-  box-shadow: inset 0px 0px 1px 1px #ccc;
+  box-shadow: var(--shadow-l);
+  border: var(--prompt-border-width) solid var(--prompt-border-color);
   width: 200px;
   min-height: 90px;
-  background-color: white;
+  background-color: var(--background-primary);
   z-index: 999;
   border-radius: 5px;
   padding: 10px;
@@ -96,21 +97,10 @@ watch(() => prop.visible, listenClick, { immediate: true })
 
 .confirm-yes {
   margin-right: 10px;
-  color: white;
-  background: rgba(108, 49, 227, 0.74);
+  color: inherit;
 }
 
-.confirm-yes:hover {
-  margin-right: 10px;
-  color: white;
-  background: rgba(108, 49, 227, 0.84);
-}
-
-.confirm-yes:active {
-  background: #6c31e3;
-}
-
-.confirm-no:active {
-  background: #e3e3e3;
+.confirm-no {
+  background: var(--color-base-10);
 }
 </style>

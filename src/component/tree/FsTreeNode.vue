@@ -2,9 +2,8 @@
 import { IFsTreeNodeEmitter, IFsTreeNodeProps, ITreeNode } from './types'
 import collapse from '../asset/chevron-right.svg'
 import expand from '../asset/chevron-down.svg'
-import { ref, watch, inject } from 'vue'
+import { ref, watch } from 'vue'
 import FsCheckbox from '../checkbox/FsCheckbox.vue'
-import { PluginSettings } from '../../main'
 
 const props = defineProps<IFsTreeNodeProps>()
 const emit = defineEmits<IFsTreeNodeEmitter>()
@@ -31,25 +30,20 @@ watch(
   }
 )
 
-const settings: PluginSettings = inject('settings')
-
 const computedFontColor = (status: string) => {
-  if (!settings) return 'inherit'
   switch (status) {
     case 'added':
-      return settings.addedFontColor
+      return 'var(--color-green)'
     case 'modified':
-      return settings.modifiedFontColor
+      return 'var(--color-blue)'
     case 'deleted':
-      return settings.deletedFontColor
+      return 'var(--color-base-40)'
     case 'untracked':
-      return settings.untrackedFontColor
+      return 'var(--color-red)'
     default:
       return 'inherit'
   }
 }
-
-
 </script>
 
 <template>
@@ -57,12 +51,14 @@ const computedFontColor = (status: string) => {
     class="fs-node-content"
     :style="{ paddingLeft: `${props.node.level * 16}px` }"
   >
-    <span class="fs-node-icon">
+    <span
+      class="fs-node-icon"
+      @click="handleToggleExpand(props.node)"
+    >
       <img
         v-if="!props.node.isLeaf"
         :src="props.isExpanded ? expand : collapse"
         alt=""
-        @click="handleToggleExpand(props.node)"
       />
     </span>
     <fs-checkbox
@@ -83,6 +79,7 @@ const computedFontColor = (status: string) => {
     <span
       class="fs-node-label-extra"
       v-if="props.node.fileNum"
+      style="color: var(--color-base-40)"
     >
       {{ props.node.fileNum }} files</span
     >
@@ -100,11 +97,15 @@ const computedFontColor = (status: string) => {
 .fs-node-icon {
   width: 20px;
   height: 20px;
+  overflow: hidden;
 }
 
 .fs-node-icon > img {
   width: 16px;
   height: 16px;
+
+  filter: drop-shadow(var(--icon-color) 0 50px);
+  transform: translateY(-50px);
 }
 
 .fs-node-label-extra {
