@@ -52,7 +52,7 @@ const computedFontColor = (status: string) => {
     :style="{ paddingLeft: `${props.node.level * 16}px` }"
   >
     <span
-      class="fs-node-icon"
+      class="fs-node-icon no-shrink"
       @click="handleToggleExpand(props.node)"
     >
       <img
@@ -62,12 +62,13 @@ const computedFontColor = (status: string) => {
       />
     </span>
     <fs-checkbox
+      class="no-shrink"
       :checked="props.node.isChecked"
       :indeterminate="props.node.isHalfChecked"
       @change="handleCheckChange(props.node)"
     />
     <span
-      class="fs-node-label"
+      class="fs-node-label ellipsis"
       :style="{
         fontWeight: props.node.level === 0 ? 'bold' : 'unset',
         color: computedFontColor(props.node.rawNode.status),
@@ -77,7 +78,7 @@ const computedFontColor = (status: string) => {
       {{ props.node.name }}
     </span>
     <span
-      class="fs-node-label-extra"
+      class="fs-node-label-extra ellipsis"
       v-if="props.node.fileNum"
       style="color: var(--color-base-40)"
     >
@@ -112,5 +113,16 @@ const computedFontColor = (status: string) => {
   color: rgba(0, 0, 0, 0.3);
   font-size: 13px;
   margin-left: 10px;
+}
+
+.ellipsis {
+  text-wrap: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 避免跟随父元素宽度自适应 */
+.no-shrink {
+  flex-shrink: 0
 }
 </style>
