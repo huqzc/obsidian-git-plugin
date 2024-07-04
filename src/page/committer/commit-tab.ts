@@ -1,10 +1,15 @@
-import { ItemView, WorkspaceLeaf } from 'obsidian'
+import { DataAdapter, ItemView, WorkspaceLeaf } from 'obsidian'
 import { createApp } from 'vue'
 import CommitPage from './CommitPage.vue'
 import { eventBus } from '../../tool/eventBus'
 import GitCommitterPlugin from '../../main'
 
 export const VIEW_TYPE_NAME = 'git-committer'
+
+// solve the problem of lack of basePath
+interface AdapterBasePath extends DataAdapter{
+  basePath: string
+}
 
 export class GitCommitter extends ItemView {
   plugin: GitCommitterPlugin
@@ -29,7 +34,8 @@ export class GitCommitter extends ItemView {
   async onOpen(): Promise<void> {
     const container = this.containerEl.children[1]
     container.empty()
-    const baseDir = this.app.vault.adapter.basePath as string
+    const adapter = this.app.vault.adapter as AdapterBasePath
+    const baseDir = adapter.basePath as string
     const app = createApp(CommitPage, { baseDir, settings: this.plugin.settings })
     app.mount(container)
   }
